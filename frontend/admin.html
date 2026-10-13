@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card admin-card">
+    <div class="header">
+      <h2>Admin Panel</h2>
+      <a href="index.html" class="back-link">← Back to my tasks</a>
+    </div>
+
+    <p id="admin-summary" class="message"></p>
+
+    <div id="users-container"></div>
+
+    <div class="pagination">
+      <button id="prev-btn">← Previous</button>
+      <span id="page-info"></span>
+      <button id="next-btn">Next →</button>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

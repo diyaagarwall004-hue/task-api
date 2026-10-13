@@ -1,0 +1,277 @@
+/* ---------- Basic page setup ---------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  display: flex;
+  justify-content: center;
+  padding: 40px 16px;
+  color: #222;
+}
+
+/* ---------- Card (white box) ---------- */
+.card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 480px;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #4a47d6;
+}
+
+h2 {
+  margin-bottom: 15px;
+}
+
+/* ---------- Forms ---------- */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+input {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+}
+
+input:focus {
+  outline: none;
+  border-color: #4a47d6;
+}
+
+button {
+  padding: 12px;
+  background: #4a47d6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #3734b3;
+}
+
+a {
+  color: #4a47d6;
+}
+
+/* ---------- Hide/show helper ---------- */
+.hidden {
+  display: none !important;
+}
+
+/* ---------- Messages (error/success) ---------- */
+.message {
+  text-align: center;
+  font-size: 14px;
+}
+
+.message.error {
+  color: #d63c3c;
+}
+
+.message.success {
+  color: #2e9d4a;
+}
+
+/* ---------- Dashboard header ---------- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header button {
+  padding: 8px 14px;
+  background: #888;
+}
+
+/* ---------- Task list ---------- */
+#task-list {
+  list-style: none;
+}
+
+#task-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.task-title {
+  font-weight: bold;
+}
+
+.task-desc {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Completed task pe line kat jayegi */
+#task-list li.completed .task-title {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.task-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.task-actions button {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.btn-complete {
+  background: #2e9d4a;
+}
+
+.btn-delete {
+  background: #d63c3c;
+}
+
+/* ---------- Filter tabs ---------- */
+.filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 8px;
+  background: #e8e8f5;
+  color: #4a47d6;
+  font-size: 14px;
+}
+
+.filter-btn:hover {
+  background: #d6d5f3;
+}
+
+.filter-btn.active {
+  background: #4a47d6;
+  color: white;
+}
+
+/* ---------- Edit button ---------- */
+.btn-edit {
+  background: #e09b2d;
+}
+
+.btn-edit:hover {
+  background: #c4851f;
+}
+
+/* ---------- Dashboard header links ---------- */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-link,
+.back-link {
+  font-size: 14px;
+  text-decoration: none;
+}
+
+/* ---------- Admin page ---------- */
+.admin-card {
+  max-width: 720px;
+}
+
+.user-card {
+  border: 1px solid #e3e3e3;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.user-card h3 {
+  margin-bottom: 6px;
+}
+
+.user-meta {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: #e8e8f5;
+  color: #4a47d6;
+}
+
+.badge.pending {
+  background: #fff1dc;
+  color: #a86a12;
+}
+
+.badge.done {
+  background: #e1f4e6;
+  color: #2e7d43;
+}
+
+.user-tasks {
+  list-style: none;
+  font-size: 14px;
+}
+
+.user-tasks li {
+  padding: 6px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.user-tasks li.completed {
+  text-decoration: line-through;
+  color: #999;
+}
+
+/* ---------- Pagination ---------- */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.pagination button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
