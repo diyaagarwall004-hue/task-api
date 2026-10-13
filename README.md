@@ -2,7 +2,7 @@
 
 A full-stack task management app with user authentication, role-based admin access and a cloud PostgreSQL database.
 
-**Live demo:** YOUR-LIVE-LINK
+**Live demo:** [YOUR-LIVE-LINK](https://task-api-n64f.onrender.com/)
 
 > Hosted on Render's free plan, so the first load can take 30–60 seconds while the server wakes up.
 
