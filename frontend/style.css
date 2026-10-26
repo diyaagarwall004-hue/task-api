@@ -275,3 +275,19 @@ a {
   background: #ccc;
   cursor: not-allowed;
 }
+/* ===== RBAC: roles and assign form ===== */
+.role-row { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; flex-wrap: wrap; }
+.role-row select { padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; }
+.badge.role { text-transform: capitalize; background: #eceff1; color: #37474f; }
+.badge.role.admin { background: #e3f2fd; color: #1565c0; }
+.badge.role.super_admin { background: #f3e5f5; color: #6a1b9a; }
+.assign-form { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.assign-form input { flex: 1; min-width: 160px; }
+.inline-note { font-size: 0.85rem; color: #666; }
+.inline-note.error { color: #c62828; }
+
+/* ===== Due dates ===== */
+.due-label { display: block; font-size: 0.85rem; color: #555; margin: 4px 0; }
+.due-label input { margin-top: 4px; }
+.task-due { display: block; font-size: 0.8rem; color: #666; margin-top: 2px; }
+.task-due.overdue { color: #c62828; font-weight: 600; }

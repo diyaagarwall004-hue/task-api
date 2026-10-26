@@ -28,11 +28,19 @@ function authHeaders() {
   };
 }
 
+function getPermissions() {
+  try {
+    return JSON.parse(localStorage.getItem('userPermissions')) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
 function showDashboard() {
   authSection.classList.add('hidden');
   dashboardSection.classList.remove('hidden');
   userNameSpan.textContent = localStorage.getItem('userName');
-  if (localStorage.getItem('userRole') === 'admin') {
+  if (getPermissions().includes('users:read')) {
     adminLink.classList.remove('hidden');
   } else {
     adminLink.classList.add('hidden');
@@ -114,7 +122,9 @@ loginForm.addEventListener('submit', async (e) => {
 
     localStorage.setItem('token', data.token);
     localStorage.setItem('userName', data.user.name);
-    localStorage.setItem('userRole',data.user.role);
+    localStorage.setItem('userRole', data.user.role);
+    localStorage.setItem('userId', data.user.id);
+    localStorage.setItem('userPermissions', JSON.stringify(data.user.permissions || []));
 
     loginForm.reset();
     showMessage('', '');
@@ -129,6 +139,8 @@ function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('userName');
   localStorage.removeItem('userRole');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('userPermissions');
   showAuth();
 }
 
@@ -195,6 +207,17 @@ function renderTasks(tasks) {
       info.appendChild(desc);
     }
 
+    if (task.dueDate) {
+      const due = document.createElement('span');
+      due.className = 'task-due';
+      due.textContent = 'Due: ' + new Date(task.dueDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+      if (task.status !== 'completed' && new Date(task.dueDate) < new Date()) {
+        due.classList.add('overdue');
+        due.textContent += ' (overdue)';
+      }
+      info.appendChild(due);
+    }
+
     // Right side: buttons
     const actions = document.createElement('div');
     actions.className = 'task-actions';
@@ -231,16 +254,23 @@ taskForm.addEventListener('submit', async (e) => {
 
   const title = document.getElementById('task-title').value;
   const description = document.getElementById('task-description').value;
+  const dueValue = document.getElementById('task-due').value;
+  const body = { title, description };
+  // datetime-local gives the user's local time; send it as an exact moment (UTC).
+  if (dueValue) body.dueDate = new Date(dueValue).toISOString();
 
   const res = await fetch(`${API_URL}/tasks`, {
     method: 'POST',
     headers: authHeaders(),
-    body: JSON.stringify({ title, description })
+    body: JSON.stringify(body)
   });
 
   if (res.ok) {
     taskForm.reset();
     loadTasks();
+  } else {
+    const data = await res.json().catch(() => ({}));
+    alert(data.message || 'Could not add the task.');
   }
 });
 

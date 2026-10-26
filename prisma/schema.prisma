@@ -20,7 +20,17 @@ model Task {
   status String @default("pending")
   createdAt DateTime @default(now())
   userId Int 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation("TaskOwner", fields: [userId], references: [id])
+
+  // Due-date reminders
+  dueDate DateTime?
+  assignedById Int?
+  assignedBy User? @relation("TaskAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  dayBeforeSentAt DateTime?
+  hourBeforeSentAt DateTime?
+  lastOverdueSentAt DateTime?
+
+  @@index([status, dueDate])
 }
 
 model User {
@@ -31,5 +41,6 @@ model User {
   createdAt DateTime @default(now())
   lastLogin DateTime?
   role String @default("user")
-  tasks Task[]
+  tasks Task[] @relation("TaskOwner")
+  assignedTasks Task[] @relation("TaskAssigner")
 }

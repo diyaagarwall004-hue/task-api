@@ -15,6 +15,13 @@
 
     <p id="admin-summary" class="message"></p>
 
+    <form id="assign-all-form" class="assign-form assign-all hidden">
+      <input type="text" id="assign-all-title" placeholder="Task title for everyone" required>
+      <input type="text" id="assign-all-desc" placeholder="Description (optional)">
+      <button type="submit">Assign to all users</button>
+      <span id="assign-all-note" class="inline-note"></span>
+    </form>
+
     <div id="users-container"></div>
 
     <div class="pagination">
