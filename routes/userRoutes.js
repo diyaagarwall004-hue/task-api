@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { signup, login, getAllUserWithTasks } = require('../controllers/userController');
+const { signup, login, getAllUserWithTasks, updateUserRole } = require('../controllers/userController');
 const protect = require('../middlewares/authMiddleware');
-const adminOnly = require('../middlewares/adminMiddleware');
+const requirePermission = require('../middlewares/permissionMiddleware');
+const { PERMISSIONS } = require('../config/roles');
 
 router.post('/signup', signup);
 router.post('/login', login);
-router.get('/users', protect, adminOnly, getAllUserWithTasks);
+router.get('/users', protect, requirePermission(PERMISSIONS.USERS_READ), getAllUserWithTasks);
+router.patch('/users/:id/role', protect, requirePermission(PERMISSIONS.ROLES_MANAGE), updateUserRole);
 
-module.exports =router;
+module.exports = router;
