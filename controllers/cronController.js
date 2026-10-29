@@ -1,8 +1,7 @@
 const crypto = require('crypto');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { sendMail } = require('../services/mailer');
 const { runReminders } = require('../services/reminderJob');
-const prisma = new PrismaClient();
 
 const safeEqual = (a, b) => {
   const x = Buffer.from(String(a));
@@ -15,18 +14,12 @@ const safeEqual = (a, b) => {
 exports.sendReminders = async (req, res) => {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    return res.status(503).json({ message: "Reminders are disabled: CRON_SECRET is not set" });
+    return res.status(503).json({ message: 'Reminders are disabled: CRON_SECRET is not set' });
   }
   const provided = req.headers['x-cron-secret'] || req.query.key;
   if (!provided || !safeEqual(provided, secret)) {
-    return res.status(401).json({ message: "Invalid cron key" });
+    return res.status(401).json({ message: 'Invalid cron key' });
   }
 
-  try {
-    const result = await runReminders({ prisma, sendMail });
-    res.status(200).json(result);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Something went wrong" });
-  }
+  res.status(200).json(await runReminders({ prisma, sendMail }));
 };

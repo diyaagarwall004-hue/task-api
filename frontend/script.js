@@ -12,8 +12,9 @@ const logoutBtn = document.getElementById('logout-btn');
 const taskForm = document.getElementById('task-form');
 const taskList = document.getElementById('task-list');
 const adminLink = document.getElementById('admin-link');
-let allTasks = [];
+const TASKS_PER_PAGE = 10;
 let currentFilter = 'all';
+let currentTaskPage = 1;
 
 // ================== SECTION 2: HELPERS ==================
 function showMessage(text, type) {
@@ -150,30 +151,54 @@ logoutBtn.addEventListener('click', () => {
 });
 
 // ================== SECTION 7: TASKS LOAD KARNA ==================
-async function loadTasks() {
-  try {
-    const res = await fetch(`${API_URL}/tasks`, { headers: authHeaders() });
+// The server does the filtering and pagination: GET /api/tasks?page=&limit=&status=
+async function loadTasks(page = currentTaskPage) {
+  const params = new URLSearchParams({ page, limit: TASKS_PER_PAGE });
+  if (currentFilter !== 'all') params.set('status', currentFilter);
 
-    if (res.status === 401) {
-      logout();
-      showMessage('Session expired. Please login again.', 'error');
+  try {
+    const res = await fetch(`${API_URL}/tasks?${params}`, { headers: authHeaders() });
+    if (handleSessionExpiry(res)) return;
+
+    const data = await res.json();
+    if (!res.ok) {
+      taskList.innerHTML = '';
+      showTaskError(data.message || 'Could not load tasks.');
       return;
     }
 
-    if (res.status === 403) {
-        summary.textContent = 'Access denied. Only admins can view this page.';
-        summary.className = 'message error';
-        usersContainer.innerHTML = '';
-        document.querySelector('.pagination').classList.add('hidden');
-        return;
-    }
+    // If the last task on a page was deleted, step back one page.
+    if (data.tasks.length === 0 && page > 1) return loadTasks(page - 1);
 
-    const tasks = await res.json();
-    allTasks = tasks;
-    applyFilter();
+    currentTaskPage = page;
+    renderTasks(data.tasks);
+    renderTaskPagination(data.pagination);
   } catch (error) {
-    taskList.innerHTML = '<li>Could not load tasks.</li>';
+    showTaskError('Could not load tasks.');
   }
+}
+
+function showTaskError(text) {
+  taskList.innerHTML = '';
+  const li = document.createElement('li');
+  li.textContent = text;
+  taskList.appendChild(li);
+}
+
+function renderTaskPagination({ page, totalPages }) {
+  const box = document.getElementById('task-pagination');
+  box.classList.toggle('hidden', totalPages <= 1);
+  document.getElementById('task-page-info').textContent = `Page ${page} of ${totalPages}`;
+  document.getElementById('task-prev-btn').disabled = page <= 1;
+  document.getElementById('task-next-btn').disabled = page >= totalPages;
+}
+
+// Logs out on 401 (expired or invalid token). Returns true if it did.
+function handleSessionExpiry(res) {
+  if (res.status !== 401) return false;
+  logout();
+  showMessage('Session expired. Please login again.', 'error');
+  return true;
 }
 
 // ================== SECTION 8: TASKS SCREEN PE DIKHANA ==================
@@ -182,7 +207,7 @@ function renderTasks(tasks) {
 
   if (tasks.length === 0) {
     const empty = document.createElement('li');
-    empty.textContent = 'No tasks yet. Add your first task above!';
+    empty.textContent = currentFilter === 'all' ? 'No tasks yet. Add your first task above!' : `No ${currentFilter} tasks.`;
     taskList.appendChild(empty);
     return;
   }
@@ -265,70 +290,65 @@ taskForm.addEventListener('submit', async (e) => {
     body: JSON.stringify(body)
   });
 
+  if (handleSessionExpiry(res)) return;
   if (res.ok) {
     taskForm.reset();
-    loadTasks();
+    loadTasks(1);
   } else {
     const data = await res.json().catch(() => ({}));
     alert(data.message || 'Could not add the task.');
   }
 });
 
-// ================== SECTION 10: COMPLETE & DELETE ==================
-async function completeTask(id) {
-  await fetch(`${API_URL}/tasks/${id}`, {
+// ================== SECTION 10: COMPLETE, DELETE, EDIT ==================
+// Sends a change to the server, shows the error if it fails, then reloads the list.
+async function sendTaskChange(url, options) {
+  try {
+    const res = await fetch(url, { headers: authHeaders(), ...options });
+    if (handleSessionExpiry(res)) return;
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.message || 'Something went wrong.');
+    }
+  } catch (error) {
+    alert('Cannot connect to server.');
+  }
+  loadTasks();
+}
+
+function completeTask(id) {
+  return sendTaskChange(`${API_URL}/tasks/${id}`, {
     method: 'PUT',
-    headers: authHeaders(),
     body: JSON.stringify({ status: 'completed' })
   });
-  loadTasks();
 }
 
-async function deleteTask(id) {
+function deleteTask(id) {
   if (!confirm('Are you sure you want to delete this task?')) return;
-
-  await fetch(`${API_URL}/tasks/${id}`, {
-    method: 'DELETE',
-    headers: authHeaders()
-  });
-  loadTasks();
+  return sendTaskChange(`${API_URL}/tasks/${id}`, { method: 'DELETE' });
 }
 
-// ================== SECTION 12: EDIT TASK ==================
-async function editTask(task) {
+function editTask(task) {
   const newTitle = prompt('Edit task title:', task.title);
-
   if (newTitle === null || newTitle.trim() === '') return;
-
-  await fetch(`${API_URL}/tasks/${task.id}`, {
+  return sendTaskChange(`${API_URL}/tasks/${task.id}`, {
     method: 'PUT',
-    headers: authHeaders(),
     body: JSON.stringify({ title: newTitle.trim() })
   });
-  loadTasks();
 }
 
-// ================== SECTION 13: FILTER TABS ==================
-function applyFilter() {
-  let filtered = allTasks;
-
-  if (currentFilter === 'pending') {
-    filtered = allTasks.filter((t) => t.status !== 'completed');
-  } else if (currentFilter === 'completed') {
-    filtered = allTasks.filter((t) => t.status === 'completed');
-  }
-
-  renderTasks(filtered);
-}
-
+// ================== SECTION 12: FILTER TABS AND PAGES ==================
 document.querySelectorAll('.filter-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.filter-btn').forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
     currentFilter = btn.dataset.filter;
-    applyFilter();
+    loadTasks(1);
   });
 });
+
+document.getElementById('task-prev-btn').addEventListener('click', () => loadTasks(currentTaskPage - 1));
+document.getElementById('task-next-btn').addEventListener('click', () => loadTasks(currentTaskPage + 1));
 
 // ================== SECTION 11: PAGE KHULTE HI CHECK ==================
 if (localStorage.getItem('token')) {
