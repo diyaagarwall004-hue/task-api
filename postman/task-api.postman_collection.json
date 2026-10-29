@@ -2,7 +2,7 @@
   "info": {
     "name": "Task API - update, ownership, sorting, RBAC",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Run the whole collection with the Collection Runner (server on baseUrl). Each run uses fresh users, so it can be repeated."
+    "description": "Run the whole collection with the Collection Runner (server on baseUrl). Each run uses fresh users. Note: login and signup are rate limited (10 logins per 15 min, 5 sign-ups per hour per IP by default); raise LOGIN_RATE_LIMIT and SIGNUP_RATE_LIMIT in .env if you run it many times in a row."
   },
   "event": [
     {
@@ -672,8 +672,10 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"200\", () => pm.response.to.have.status(200));",
-              "pm.test(\"sorted newest first\", () => { const t = pm.response.json(); pm.expect(t.length).to.be.at.least(2); for (let i = 1; i < t.length; i++) { const a = new Date(t[i-1].createdAt), b = new Date(t[i].createdAt); pm.expect(a >= b).to.be.true; if (+a === +b) pm.expect(t[i-1].id > t[i].id).to.be.true; } });",
-              "pm.test(\"task 2 is before task 1\", () => { const ids = pm.response.json().map(x => String(x.id)); pm.expect(ids.indexOf(String(pm.collectionVariables.get('task2')))).to.be.below(ids.indexOf(String(pm.collectionVariables.get('task1')))); });"
+              "const { tasks, pagination } = pm.response.json();",
+              "pm.test(\"returns tasks with pagination info\", () => { pm.expect(tasks).to.be.an('array'); pm.expect(pagination.total).to.be.at.least(2); });",
+              "pm.test(\"sorted newest first\", () => { for (let i = 1; i < tasks.length; i++) { const a = new Date(tasks[i-1].createdAt), b = new Date(tasks[i].createdAt); pm.expect(a >= b).to.be.true; if (+a === +b) pm.expect(tasks[i-1].id > tasks[i].id).to.be.true; } });",
+              "pm.test(\"task 2 is before task 1\", () => { const ids = tasks.map(x => String(x.id)); pm.expect(ids.indexOf(String(pm.collectionVariables.get('task2')))).to.be.below(ids.indexOf(String(pm.collectionVariables.get('task1')))); });"
             ]
           }
         }
@@ -1043,6 +1045,168 @@
             "type": "text/javascript",
             "exec": [
               "pm.test(\"401 (or 503 if CRON_SECRET is not set)\", () => pm.expect([401, 503]).to.include(pm.response.code));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "26. A filters by status and paginates",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{tokenA}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/tasks?status=pending&limit=1&page=1",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "tasks"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "pending"
+            },
+            {
+              "key": "limit",
+              "value": "1"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"200\", () => pm.response.to.have.status(200));",
+              "const { tasks, pagination } = pm.response.json();",
+              "pm.test(\"one pending task per page\", () => { pm.expect(tasks.length).to.eql(1); pm.expect(tasks[0].status).to.eql('pending'); pm.expect(pagination.limit).to.eql(1); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "27. Signup with invalid input",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/signup",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "signup"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"\",\n  \"email\": \"not-an-email\",\n  \"password\": \"123\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"400 with field errors\", () => { pm.response.to.have.status(400); pm.expect(pm.response.json().errors.map(e => e.field)).to.include.members(['name','email','password']); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "28. Login with a wrong password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"a_{{run}}@test.com\",\n  \"password\": \"wrong-password1\"\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"401\", () => pm.response.to.have.status(401));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "29. Unknown API route",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/does-not-exist",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "does-not-exist"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"JSON 404\", () => { pm.response.to.have.status(404); pm.expect(pm.response.json().message).to.include('Route not found'); });"
             ]
           }
         }

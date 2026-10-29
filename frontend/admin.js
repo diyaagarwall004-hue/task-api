@@ -119,11 +119,15 @@ async function loadUsers(page) {
     }
 
     const data = await res.json();
+    if (!res.ok) {
+      summary.textContent = data.message || 'Could not load users.';
+      summary.className = 'message error';
+      return;
+    }
 
-    // Backend chahe sirf array bheje ya pagination wala object, dono handle ho jayenge
-    const users = Array.isArray(data) ? data : data.users;
-    const totalPages = data.totalPages || 1;
-    const totalUsers = data.totalUsers || users.length;
+    const { users, pagination } = data;
+    const totalPages = Math.max(pagination.totalPages, 1);
+    const totalUsers = pagination.total;
 
     currentPage = page;
     renderUsers(users);
@@ -144,8 +148,8 @@ function renderUsers(users) {
   usersContainer.innerHTML = '';
 
   users.forEach((user) => {
-    const doneCount = user.tasks.filter((t) => t.status === 'completed').length;
-    const pendingCount = user.tasks.length - doneCount;
+    // Totals come from the server; only the most recent tasks are listed.
+    const { total, pending: pendingCount, completed: doneCount } = user.taskStats;
 
     const card = document.createElement('div');
     card.className = 'user-card';
@@ -192,7 +196,7 @@ function renderUsers(users) {
 
     const totalBadge = document.createElement('span');
     totalBadge.className = 'badge';
-    totalBadge.textContent = `${user.tasks.length} tasks`;
+    totalBadge.textContent = `${total} tasks`;
 
     const pendingBadge = document.createElement('span');
     pendingBadge.className = 'badge pending';
@@ -209,12 +213,12 @@ function renderUsers(users) {
     const list = document.createElement('ul');
     list.className = 'user-tasks';
 
-    if (user.tasks.length === 0) {
+    if (user.recentTasks.length === 0) {
       const li = document.createElement('li');
       li.textContent = 'No tasks yet';
       list.appendChild(li);
     } else {
-      user.tasks.forEach((task) => {
+      user.recentTasks.forEach((task) => {
         const li = document.createElement('li');
         let text = task.description
           ? `${task.title} — ${task.description}`
@@ -229,6 +233,13 @@ function renderUsers(users) {
     }
 
     card.appendChild(list);
+
+    if (total > user.recentTasks.length) {
+      const more = document.createElement('div');
+      more.className = 'inline-note';
+      more.textContent = `Showing the ${user.recentTasks.length} most recent of ${total} tasks`;
+      card.appendChild(more);
+    }
 
     if (canAssign) {
       const form = document.createElement('form');

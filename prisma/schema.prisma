@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,34 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Task {
-  id Int @id @default(autoincrement())
-  title String 
-  description String?
-  status String @default("pending")
-  createdAt DateTime @default(now())
-  userId Int 
-  user User @relation("TaskOwner", fields: [userId], references: [id])
+enum Role {
+  user
+  admin
+  super_admin
+}
 
-  // Due-date reminders
-  dueDate DateTime?
-  assignedById Int?
-  assignedBy User? @relation("TaskAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
-  dayBeforeSentAt DateTime?
-  hourBeforeSentAt DateTime?
-  lastOverdueSentAt DateTime?
-
-  @@index([status, dueDate])
+enum TaskStatus {
+  pending
+  completed
 }
 
 model User {
-  id Int @id @default(autoincrement())
-  name String 
-  email String @unique
-  password String 
-  createdAt DateTime @default(now())
-  lastLogin DateTime?
-  role String @default("user")
-  tasks Task[] @relation("TaskOwner")
-  assignedTasks Task[] @relation("TaskAssigner")
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
+  password      String
+  role          Role      @default(user)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+  lastLogin     DateTime?
+  tasks         Task[]    @relation("TaskOwner")
+  assignedTasks Task[]    @relation("TaskAssigner")
+
+  @@index([role])
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus @default(pending)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  userId      Int
+  user        User       @relation("TaskOwner", fields: [userId], references: [id])
+
+  // Due-date reminders
+  dueDate           DateTime?
+  assignedById      Int?
+  assignedBy        User?     @relation("TaskAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  dayBeforeSentAt   DateTime?
+  hourBeforeSentAt  DateTime?
+  lastOverdueSentAt DateTime?
+
+  @@index([userId, createdAt])
+  @@index([status, dueDate])
+  @@index([assignedById])
 }
