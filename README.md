@@ -2,9 +2,9 @@
 
 A full-stack task management app with JWT authentication, role-based access control (RBAC), input validation, rate limiting, due dates with email reminders, and a PostgreSQL database.
 
-**Live demo:** https://task-api-n64f.onrender.com/
+**Live demo (Vercel):** VERCEL_URL_HERE
 
-> Hosted on Render's free plan, so the first load can take 30–60 seconds while the server wakes up.
+Also deployed on Render: https://task-api-n64f.onrender.com/ (free plan, so the first load can take 30–60 seconds).
 
 ## Features
 
@@ -44,7 +44,7 @@ A full-stack task management app with JWT authentication, role-based access cont
 | Email | Nodemailer (Gmail SMTP) |
 | Frontend | HTML, CSS, vanilla JavaScript |
 | Testing | Node.js test runner, Supertest, Postman |
-| Hosting | Render, with cron-job.org for scheduled reminders |
+| Hosting | Vercel (and Render), with cron-job.org for scheduled reminders |
 
 ## Project Structure
 
@@ -68,7 +68,7 @@ task-api/
 │   └── validation.js       # Validation rules for bodies, ids and list queries
 ├── services/               # Email sending, email templates, reminder job
 ├── prisma/                 # Database schema and migrations
-├── frontend/               # Login, dashboard and admin pages
+├── public/                 # Frontend: login, dashboard and admin pages (served by Vercel's CDN)
 ├── tests/                  # Automated tests (npm test)
 ├── postman/                # Postman collection for manual/API testing
 ├── makeAdmin.js            # Script to set a user's role
@@ -86,7 +86,7 @@ task-api/
 
 - Each route declares the permission it needs; `requirePermission` reads the user's role from the database on every request, so role changes apply immediately.
 - Nobody can change their own role, and the last super admin cannot be demoted.
-- To add a role, add it to `config/roles.js`, the `Role` enum in `prisma/schema.prisma`, and the role dropdown in `frontend/admin.js`.
+- To add a role, add it to `config/roles.js`, the `Role` enum in `prisma/schema.prisma`, and the role dropdown in `public/admin.js`.
 
 **Creating the first super admin** (needed once, because only a super admin can change roles). The user must have signed up first. Either:
 
@@ -180,10 +180,9 @@ cron-job.org calls `/api/cron/send-reminders?key=<CRON_SECRET>` every 5 minutes.
    npm install
    ```
 2. Copy `.env.example` to `.env` and fill it in. `DATABASE_URL` and `JWT_SECRET` are required; the server stops with a clear message if they are missing (and warns if `JWT_SECRET` is shorter than 16 characters). The rest are optional.
-3. Apply the database migrations:
+3. Apply the database migrations (`npm install` already generated the Prisma Client; run `npx prisma generate` if you see Prisma errors):
    ```bash
    npx prisma migrate deploy
-   npx prisma generate
    ```
 4. Start the server and open `http://localhost:5000`:
    ```bash
@@ -225,18 +224,32 @@ The tests use Node's built-in test runner and Supertest, with an in-memory stand
 
 Import `postman/task-api.postman_collection.json`, start the server, and run it with the Collection Runner (`baseUrl` defaults to `http://localhost:5000`). It runs against the real database. Login and sign-up are rate limited, so wait or raise the limits in `.env` before running it many times in a row.
 
-## Deployment (Render)
+## Deployment
 
-- **Build command:** `npm install && npx prisma generate && npx prisma migrate deploy` (applies new migrations on every deploy)
+### Vercel
+
+Vercel detects the Express app in `app.js` with zero configuration and runs it as a single serverless function. Files in `public/` are served from Vercel's CDN.
+
+1. Import the GitHub repository at [vercel.com/new](https://vercel.com/new). Leave the framework, build and output settings at their defaults.
+2. Add the environment variables from the table above (at least `DATABASE_URL` and `JWT_SECRET`; add `MAIL_USER`, `MAIL_PASS` and `CRON_SECRET` for emails).
+3. Deploy. The `vercel-build` script runs `prisma generate` and `prisma migrate deploy`, so the database is migrated on every deploy.
+4. Point the cron-job.org job at `https://<your-vercel-domain>/api/cron/send-reminders?key=<CRON_SECRET>` (every 5 minutes). Vercel's own cron jobs run at most once a day on the Hobby plan, which is too slow for the 1-hour reminder.
+
+Notes for serverless:
+- The app sends the assignment email before responding, because work after a response may be stopped on serverless hosts.
+- Rate limits are counted per running instance, so they are approximate when Vercel runs several instances.
+
+### Render
+
+- **Build command:** `npm install && npx prisma generate && npx prisma migrate deploy`
 - **Start command:** `npm start`
 - **Environment variables:** see the table above
-- **Scheduler:** a cron-job.org job calling `https://task-api-n64f.onrender.com/api/cron/send-reminders?key=<CRON_SECRET>` every 5 minutes
 
-Pushing to `main` deploys automatically.
+Pushing to `main` deploys automatically on both Vercel and Render. Reminders are recorded on each task, so running the scheduler against both deployments never sends an email twice.
 
 ## Security Notes
 
-- Secrets live only in `.env` and Render's environment settings, never in the code.
+- Secrets live only in `.env` and the hosting provider's environment settings (Vercel, Render), never in the code.
 - The frontend only uses permissions to show or hide controls; the server checks every request.
 - Login returns the same error for an unknown email and a wrong password, so accounts can't be discovered.
 - User-entered text is escaped in emails and rendered as plain text in the frontend.
