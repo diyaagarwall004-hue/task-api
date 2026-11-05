@@ -51,6 +51,18 @@
       <button type="submit">Add Task</button>
     </form>
 
+    <div class="list-controls">
+      <input type="search" id="task-search" placeholder="Search tasks..." maxlength="100">
+      <select id="task-sort" aria-label="Sort tasks">
+        <option value="createdAt:desc">Newest first</option>
+        <option value="createdAt:asc">Oldest first</option>
+        <option value="dueDate:asc">Due date (soonest)</option>
+        <option value="dueDate:desc">Due date (latest)</option>
+        <option value="title:asc">Title (A–Z)</option>
+        <option value="title:desc">Title (Z–A)</option>
+      </select>
+    </div>
+
     <div class="filters">
       <button class="filter-btn active" data-filter="all">All</button>
       <button class="filter-btn" data-filter="pending">Pending</button>

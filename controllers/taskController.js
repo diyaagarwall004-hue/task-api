@@ -137,19 +137,21 @@ exports.assignTask = async (req, res) => {
   const task = await prisma.task.create({
     data: { title, description, dueDate, userId, assignedById: req.userId }
   });
-  res.status(201).json(task);
 
-  // Runs after the response, so an email problem never fails the request.
-  prisma.user
-    .findUnique({ where: { id: req.userId }, select: { name: true, email: true } })
-    .then((assignedBy) =>
-      sendMail({
-        to: assignee.email,
-        replyTo: assignedBy?.email,
-        ...reminderEmails.assigned({ user: assignee, task, assignedBy })
-      })
-    )
-    .catch((error) => console.error('[mail] assignment email failed:', error.message));
+  // Send the email before responding: on serverless hosts (Vercel) work started after
+  // the response may be stopped. A mail problem is logged but never fails the request.
+  try {
+    const assignedBy = await prisma.user.findUnique({ where: { id: req.userId }, select: { name: true, email: true } });
+    await sendMail({
+      to: assignee.email,
+      replyTo: assignedBy?.email,
+      ...reminderEmails.assigned({ user: assignee, task, assignedBy })
+    });
+  } catch (error) {
+    console.error('[mail] assignment email failed:', error.message);
+  }
+
+  res.status(201).json(task);
 };
 
 // POST /api/tasks/assign-all (admin) - the same task for every user

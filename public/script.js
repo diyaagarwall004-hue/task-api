@@ -15,6 +15,8 @@ const adminLink = document.getElementById('admin-link');
 const TASKS_PER_PAGE = 10;
 let currentFilter = 'all';
 let currentTaskPage = 1;
+let currentSearch = '';
+let currentSort = 'createdAt:desc';
 
 // ================== SECTION 2: HELPERS ==================
 function showMessage(text, type) {
@@ -151,10 +153,13 @@ logoutBtn.addEventListener('click', () => {
 });
 
 // ================== SECTION 7: TASKS LOAD KARNA ==================
-// The server does the filtering and pagination: GET /api/tasks?page=&limit=&status=
+// The server does the filtering, search, sorting and pagination:
+// GET /api/tasks?page=&limit=&status=&search=&sortBy=&order=
 async function loadTasks(page = currentTaskPage) {
-  const params = new URLSearchParams({ page, limit: TASKS_PER_PAGE });
+  const [sortBy, order] = currentSort.split(':');
+  const params = new URLSearchParams({ page, limit: TASKS_PER_PAGE, sortBy, order });
   if (currentFilter !== 'all') params.set('status', currentFilter);
+  if (currentSearch) params.set('search', currentSearch);
 
   try {
     const res = await fetch(`${API_URL}/tasks?${params}`, { headers: authHeaders() });
@@ -207,7 +212,9 @@ function renderTasks(tasks) {
 
   if (tasks.length === 0) {
     const empty = document.createElement('li');
-    empty.textContent = currentFilter === 'all' ? 'No tasks yet. Add your first task above!' : `No ${currentFilter} tasks.`;
+    if (currentSearch) empty.textContent = `No tasks match "${currentSearch}".`;
+    else if (currentFilter !== 'all') empty.textContent = `No ${currentFilter} tasks.`;
+    else empty.textContent = 'No tasks yet. Add your first task above!';
     taskList.appendChild(empty);
     return;
   }
@@ -345,6 +352,21 @@ document.querySelectorAll('.filter-btn').forEach((btn) => {
     currentFilter = btn.dataset.filter;
     loadTasks(1);
   });
+});
+
+// Search waits until typing pauses, so the server isn't called on every key press.
+let searchTimer;
+document.getElementById('task-search').addEventListener('input', (e) => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentSearch = e.target.value.trim();
+    loadTasks(1);
+  }, 300);
+});
+
+document.getElementById('task-sort').addEventListener('change', (e) => {
+  currentSort = e.target.value;
+  loadTasks(1);
 });
 
 document.getElementById('task-prev-btn').addEventListener('click', () => loadTasks(currentTaskPage - 1));
