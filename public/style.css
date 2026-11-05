@@ -291,3 +291,8 @@ a {
 .due-label input { margin-top: 4px; }
 .task-due { display: block; font-size: 0.8rem; color: #666; margin-top: 2px; }
 .task-due.overdue { color: #c62828; font-weight: 600; }
+
+/* ===== Search and sort ===== */
+.list-controls { display: flex; gap: 10px; margin: 16px 0 8px; flex-wrap: wrap; }
+.list-controls input[type="search"] { flex: 1; min-width: 180px; margin: 0; }
+.list-controls select { padding: 8px 10px; border-radius: 6px; border: 1px solid #ccc; background: #fff; }
