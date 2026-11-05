@@ -2,7 +2,7 @@
 
 A full-stack task management app with JWT authentication, role-based access control (RBAC), input validation, rate limiting, due dates with email reminders, and a PostgreSQL database.
 
-**Live demo (Vercel):** VERCEL_URL_HERE
+**Live demo (Vercel):** https://task-api-opal.vercel.app
 
 Also deployed on Render: https://task-api-n64f.onrender.com/ (free plan, so the first load can take 30–60 seconds).
 
@@ -11,7 +11,7 @@ Also deployed on Render: https://task-api-n64f.onrender.com/ (free plan, so the 
 **Tasks**
 - Sign up and log in with JWT authentication; passwords hashed with bcrypt
 - Create, edit, complete and delete your own tasks, with an optional due date and time
-- Server-side pagination, filtering (status, search) and sorting (created date, due date, title)
+- Server-side pagination, filtering (status, search) and sorting (created date, due date, title), with a search box and sort menu on the dashboard
 - Per-user privacy: users can only see and change their own tasks
 - Safe updates: only `title`, `description`, `status` and `dueDate` can be changed
 
